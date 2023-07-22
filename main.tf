@@ -14,19 +14,7 @@ data "aws_ami" "app_ami" {
   owners = ["979382823631"] # Bitnami
 }
 
-resource "aws_instance" "blog" {
-  ami           = data.aws_ami.app_ami.id
-  instance_type = var.instance_type
 
-  tags = {
-    Name = "HelloWorld"
-  }
-  vpc_security_group_ids = [data.aws_security_group.blog.id] 
-}
-
-data "aws_vpc" "default" {
-  default = true
-}
 
 
 
@@ -64,3 +52,20 @@ resource "aws_security_group" "blog" {
         to_port = 0
     }
 }
+
+
+resource "aws_instance" "blog" {
+  ami           = data.aws_ami.app_ami.id
+  instance_type = var.instance_type
+
+  tags = {
+    Name = "HelloWorld"
+  }
+  vpc_security_group_ids = [data.aws_security_group.blog.id] 
+}
+
+data "aws_vpc" "default" {
+  default = true
+}
+
+
