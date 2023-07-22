@@ -39,7 +39,7 @@ resource "aws_security_group" "blog" {
     vpc_id = data.aws_vpc.default.id
 
     ingress {
-        security_groups = [aws_security_group.blog.id]
+        
         from_port = 80
         protocol = "tcp"
         to_port = 80
@@ -47,7 +47,7 @@ resource "aws_security_group" "blog" {
     }
 
     ingress {
-        security_groups = [aws_security_group.blog.id]
+        
         from_port = 443
         protocol = "tcp"
         to_port = 443
@@ -55,7 +55,7 @@ resource "aws_security_group" "blog" {
     }
 
     egress {
-        security_groups = [aws_security_group.blog.id]
+        
         cidr_blocks = ["0.0.0.0/0"]
         from_port = 0
         protocol = "-1"
