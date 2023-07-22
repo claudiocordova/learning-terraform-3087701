@@ -21,11 +21,13 @@ resource "aws_instance" "blog" {
   tags = {
     Name = "HelloWorld"
   }
+  vpc_security_group_ids = [data.aws_security_group.blog.id] 
 }
 
 data "aws_vpc" "default" {
   default = true
 }
+
 
 
 
