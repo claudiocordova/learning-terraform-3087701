@@ -24,7 +24,7 @@ resource "aws_instance" "blog" {
 }
 
 data "aws_vpc" "default" {
-  defauolt = true
+  default = true
 }
 
 
