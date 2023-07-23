@@ -69,6 +69,7 @@ resource "aws_security_group" "blog" {
 resource "aws_instance" "blog2" {
   ami           = data.aws_ami.app_ami.id
   instance_type = var.instance_type
+  associate_public_ip_address = true
 
   tags = {
     Name = "HelloWorld"
