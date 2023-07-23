@@ -73,6 +73,7 @@ resource "aws_instance" "blog2" {
   tags = {
     Name = "HelloWorld"
   }
+  subnet_id =  module.vpc.public_subnets[0]
   #vpc_security_group_ids = [aws_security_group.blog.id]
   # security_group_id from
   # https://registry.terraform.io/modules/terraform-aws-modules/security-group/aws/latest?tab=outputs
