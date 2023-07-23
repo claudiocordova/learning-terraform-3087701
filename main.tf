@@ -37,8 +37,8 @@ resource "aws_security_group" "blog" {
     tags = {
         for-use-with-amazon-emr-managed-policies = "true"
     }
-    vpc_id = data.aws_vpc.default.id
-    #vpc_id = module.vpc.public_subnets[0]
+    #vpc_id = data.aws_vpc.default.id
+    vpc_id = module.vpc.vpc_id
 
     ingress {
         
