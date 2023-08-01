@@ -1,0 +1,413 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Metadata:
+    Generator: "Kronos"
+Description: "Kronos"
+Parameters:
+  EnvironmentParameter:
+    Type: String
+    Default: staging
+
+Resources:
+
+    DynamoDBTableEvents:
+        Type: "AWS::DynamoDB::Table"
+        Properties:
+            AttributeDefinitions: 
+              - 
+                AttributeName: "pk"
+                AttributeType: "S"
+              - 
+                AttributeName: "sk"
+                AttributeType: "S"
+              - 
+                AttributeName: "tracking_activity_id"
+                AttributeType: "S"                
+            TableName: !Sub "kronos-events-${EnvironmentParameter}"
+            KeySchema: 
+              - 
+                AttributeName: "pk"
+                KeyType: "HASH"
+              - 
+                AttributeName: "sk"
+                KeyType: "RANGE"
+            ProvisionedThroughput: 
+                ReadCapacityUnits: 1
+                WriteCapacityUnits: 1
+            StreamSpecification: 
+                StreamViewType: "NEW_AND_OLD_IMAGES"
+            GlobalSecondaryIndexes: 
+              - 
+                IndexName: "TrackingActivityIdGSI"
+                KeySchema: 
+                  - 
+                    AttributeName: "tracking_activity_id"
+                    KeyType: "HASH"
+                Projection: 
+                  NonKeyAttributes: 
+                    - "pk"
+                    - "sk"
+                    - "service_run_id"
+                    - "item_type"                    
+                  ProjectionType: "INCLUDE"
+                ProvisionedThroughput: 
+                  ReadCapacityUnits: 1
+                  WriteCapacityUnits: 1                
+
+    ApplicationAutoScalingScalableTarget2:
+        Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+        Properties:
+            MaxCapacity: 1
+            MinCapacity: 1
+            ResourceId: !Sub "table/${DynamoDBTableEvents}/index/TrackingActivityIdGSI"
+            RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+            ScalableDimension: "dynamodb:index:WriteCapacityUnits"
+            ServiceNamespace: "dynamodb"
+            SuspendedState: 
+                DynamicScalingInSuspended: false
+                DynamicScalingOutSuspended: false
+                ScheduledScalingSuspended: false
+
+
+
+    ApplicationAutoScalingScalableTarget:
+        Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+        Properties:
+            MaxCapacity: 1
+            MinCapacity: 1
+            ResourceId: !Sub "table/${DynamoDBTableEvents}"
+            RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+            ScalableDimension: "dynamodb:table:WriteCapacityUnits"
+            ServiceNamespace: "dynamodb"
+            SuspendedState: 
+                DynamicScalingInSuspended: false
+                DynamicScalingOutSuspended: false
+                ScheduledScalingSuspended: false
+
+
+
+
+
+
+
+    DynamoDBTableJiraTickets:
+        Type: "AWS::DynamoDB::Table"
+        Properties:
+            AttributeDefinitions: 
+              - 
+                AttributeName: "pk"
+                AttributeType: "S"
+              - 
+                AttributeName: "sk"
+                AttributeType: "S"
+              - 
+                AttributeName: "tracking_activity_id"
+                AttributeType: "S"                
+            TableName: !Sub "kronos-jira-tickets-${EnvironmentParameter}"
+            KeySchema: 
+              - 
+                AttributeName: "pk"
+                KeyType: "HASH"
+              - 
+                AttributeName: "sk"
+                KeyType: "RANGE"
+            ProvisionedThroughput: 
+                ReadCapacityUnits: 1
+                WriteCapacityUnits: 1
+            StreamSpecification: 
+                StreamViewType: "NEW_AND_OLD_IMAGES"
+            GlobalSecondaryIndexes: 
+              - 
+                IndexName: "TrackingActivityIdGSI"
+                KeySchema: 
+                  - 
+                    AttributeName: "tracking_activity_id"
+                    KeyType: "HASH"
+                Projection: 
+                  NonKeyAttributes: 
+                    - "pk"
+                    - "sk"
+                    - "jira_ticket_id"
+                    - "item_type"                    
+                  ProjectionType: "INCLUDE"
+                ProvisionedThroughput: 
+                  ReadCapacityUnits: 1
+                  WriteCapacityUnits: 1  
+
+    DynamoDBTableServices:
+        Type: "AWS::DynamoDB::Table"
+        Properties:
+            AttributeDefinitions: 
+              - 
+                AttributeName: "pk"
+                AttributeType: "S"
+              - 
+                AttributeName: "sk"
+                AttributeType: "S"
+             
+            TableName: !Sub "kronos-services-${EnvironmentParameter}"
+            KeySchema: 
+              - 
+                AttributeName: "pk"
+                KeyType: "HASH"
+              - 
+                AttributeName: "sk"
+                KeyType: "RANGE"
+            ProvisionedThroughput: 
+                ReadCapacityUnits: 1
+                WriteCapacityUnits: 1
+            StreamSpecification: 
+                StreamViewType: "NEW_AND_OLD_IMAGES"
+           
+    DynamoDBTableRegions:
+        Type: "AWS::DynamoDB::Table"
+        Properties:
+            AttributeDefinitions: 
+              - 
+                AttributeName: "pk"
+                AttributeType: "S"
+              - 
+                AttributeName: "sk"
+                AttributeType: "S"
+             
+            TableName: !Sub "kronos-regions-${EnvironmentParameter}"
+            KeySchema: 
+              - 
+                AttributeName: "pk"
+                KeyType: "HASH"
+              - 
+                AttributeName: "sk"
+                KeyType: "RANGE"
+            ProvisionedThroughput: 
+                ReadCapacityUnits: 1
+                WriteCapacityUnits: 1
+            StreamSpecification: 
+                StreamViewType: "NEW_AND_OLD_IMAGES"
+
+
+    DynamoDBTableEventSources:
+        Type: "AWS::DynamoDB::Table"
+        Properties:
+            AttributeDefinitions: 
+              - 
+                AttributeName: "pk"
+                AttributeType: "S"
+              - 
+                AttributeName: "sk"
+                AttributeType: "S"
+             
+            TableName: !Sub "kronos-event-sources-${EnvironmentParameter}"
+            KeySchema: 
+              - 
+                AttributeName: "pk"
+                KeyType: "HASH"
+              - 
+                AttributeName: "sk"
+                KeyType: "RANGE"
+            ProvisionedThroughput: 
+                ReadCapacityUnits: 1
+                WriteCapacityUnits: 1
+            StreamSpecification: 
+                StreamViewType: "NEW_AND_OLD_IMAGES"
+
+
+    DynamoDBTableTrackingActivities:
+        Type: "AWS::DynamoDB::Table"
+        Properties:
+            AttributeDefinitions: 
+              - 
+                AttributeName: "pk"
+                AttributeType: "S"
+              - 
+                AttributeName: "sk"
+                AttributeType: "S"
+             
+            TableName: !Sub "kronos-tracking-activities-${EnvironmentParameter}"
+            KeySchema: 
+              - 
+                AttributeName: "pk"
+                KeyType: "HASH"
+              - 
+                AttributeName: "sk"
+                KeyType: "RANGE"
+            ProvisionedThroughput: 
+                ReadCapacityUnits: 1
+                WriteCapacityUnits: 1
+            StreamSpecification: 
+                StreamViewType: "NEW_AND_OLD_IMAGES"
+
+
+    DynamoDBTableTrackingActivityAliases:
+        Type: "AWS::DynamoDB::Table"
+        Properties:
+            AttributeDefinitions: 
+              - 
+                AttributeName: "pk"
+                AttributeType: "S"
+              - 
+                AttributeName: "sk"
+                AttributeType: "S"
+             
+            TableName: !Sub "kronos-tracking-activity-aliases-${EnvironmentParameter}"
+            KeySchema: 
+              - 
+                AttributeName: "pk"
+                KeyType: "HASH"
+              - 
+                AttributeName: "sk"
+                KeyType: "RANGE"
+            ProvisionedThroughput: 
+                ReadCapacityUnits: 1
+                WriteCapacityUnits: 1
+            StreamSpecification: 
+                StreamViewType: "NEW_AND_OLD_IMAGES"
+
+
+    DynamoDBTableVariables:
+        Type: "AWS::DynamoDB::Table"
+        Properties:
+            AttributeDefinitions: 
+              - 
+                AttributeName: "pk"
+                AttributeType: "S"
+              - 
+                AttributeName: "sk"
+                AttributeType: "S"
+             
+            TableName: !Sub "kronos-variables-${EnvironmentParameter}"
+            KeySchema: 
+              - 
+                AttributeName: "pk"
+                KeyType: "HASH"
+              - 
+                AttributeName: "sk"
+                KeyType: "RANGE"
+            ProvisionedThroughput: 
+                ReadCapacityUnits: 1
+                WriteCapacityUnits: 1
+        
+             
+             
+
+
+
+
+
+
+
+
+
+
+
+
+    IAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/service-role/"
+            RoleName: "kronos-dynamodb-to-s3-processor-role"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - !Ref IAMManagedPolicy
+
+    IAMManagedPolicy:
+        Type: "AWS::IAM::ManagedPolicy"
+        Properties:
+            ManagedPolicyName: "kronos-dynamodb-to-s3-processor-role-policy"
+            Path: "/service-role/"
+            PolicyDocument: !Sub |
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "logs:CreateLogGroup",
+                            "Resource": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "logs:CreateLogStream",
+                                "logs:PutLogEvents"
+                            ],
+                            "Resource": [
+                               "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ddb-to-s3-processor:*"
+                            ]
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "dynamodb:DescribeStream",
+                                "dynamodb:GetRecords",
+                                "dynamodb:GetShardIterator",
+                                "dynamodb:ListStreams"
+                            ],
+                            "Resource": "*"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:*"
+                            ],
+                            "Resource": [
+                                "*"
+                            ]
+                        }
+                    ]
+                }
+
+
+
+
+
+
+
+
+
+
+
+Outputs:
+  DynamoDBTableEventsStreamArn:
+    Value: !GetAtt DynamoDBTableEvents.StreamArn
+    Export:
+      Name: DynamoDBTableEventsStreamArn
+  DynamoDBTableJiraTicketsStreamArn:
+    Value: !GetAtt DynamoDBTableJiraTickets.StreamArn
+    Export:
+      Name: DynamoDBTableJiraTicketsStreamArn
+  DynamoDBTableServicesStreamArn:
+    Value: !GetAtt DynamoDBTableServices.StreamArn
+    Export:
+      Name: DynamoDBTableServicesStreamArn
+  DynamoDBTableRegionsStreamArn:
+    Value: !GetAtt DynamoDBTableRegions.StreamArn
+    Export:
+      Name: DynamoDBTableRegionsStreamArn
+  DynamoDBTableEventSourcesStreamArn:
+    Value: !GetAtt DynamoDBTableEventSources.StreamArn
+    Export:
+      Name: DynamoDBTableEventSourcesStreamArn
+  DynamoDBTableTrackingActivityAliasesStreamArn :
+    Value: !GetAtt DynamoDBTableTrackingActivityAliases.StreamArn
+    Export:
+      Name: DynamoDBTableTrackingActivityAliasesStreamArn      
+  DynamoDBTableTrackingActivitiesStreamArn :
+    Value: !GetAtt DynamoDBTableTrackingActivities.StreamArn
+    Export:
+      Name: DynamoDBTableTrackingActivitiesStreamArn    
+
+
+
+
+
+ # Lambda stack
+# Resources:
+#   Function:
+#     Type: AWS::Lambda::Function
+#     # etc.
+
+#   EventMapping:
+#     Type: AWS::Lambda::EventSourceMapping
+#     Properties:
+#       EventSourceArn: !ImportValue StreamArn
+#       FunctionName: !GetAtt Function.Arn
+#       # etc.     

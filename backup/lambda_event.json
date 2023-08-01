@@ -1,0 +1,27 @@
+{
+    "Records": [
+        {
+            "EventSource": "aws:sns",
+            "EventVersion": "1.0",
+            "EventSubscriptionArn": "arn:aws:sns:us-east-1: 289485838881:hdmap-services-events-production:e53d9a4c-580c-4ddf-8a55-96a1f1894edb",
+            "Sns": {
+                "Type": "Notification",
+                "MessageId": "e02099d7-9be5-58d4-9ae4-c4eb553978d4",
+                "TopicArn": "arn:aws:sns:us-east-1: 289485838881:hdmap-services-events-production",
+                "Subject": null,
+                "Message": "{\"event_source\": \"POSE_GRAPH_VALIDATOR_ARGO\",\"payload\": {\"service_id\": \"POSE_GRAPH_VALIDATOR\",\"is_test_data\": false,\"dataset_session\": \"2023-07-27_19-54-09-GMT\",\"drivelog\": null,\"has_colored_point_cloud\": null,\"service_progress_url\": \"https://argo.maps.motional.com/workflows/argo/pose-graph-validator-msqbr%5C\",\"dataset_region\": \"us-ca-los-angeles-santa-monica\"},\"hdmap_slackbot\": {\"do_skip_notification\": null,\"extra_text\": \"\"},\"slack_message\":{\"channel\": null,\"text\": null},\"event_id\": \"SERVICE_START\"}",
+                "Timestamp": "2023-07-27T19:59:24.551Z",
+                "SignatureVersion": "1",
+                "Signature": "EG5n9yuZP1pFZrgINno3F8n6K9y0epayh9NVC98m6ITvI8lkRudkCitjQnH4FdnhMuKZgGnKkkvy/ShCfHYyb6BK6GDTrZ/nHHlsKgSfwHND6Zw5d7phXvgPRoVz3PEXk0sB/kApWUhLoBs7cuUy1I3zr3C0qG/x1XUNDdc5vliu6sQyE9IiqbPqXd0C3l8dnq8MncvKQnFwB0KXWfH37g0cq7lb6YAKQQH7KPjO6cYb0UcS4Aopm+8RTZXFP8QnTDm4KAyopK1ieuCTIQJy81V3Nni3blaa+XmBM9N87E1xruOMglIzJNpxZ2FhnlVTCgZMJ1imqnfjr3N/ae27yw==",
+                "SigningCertUrl": "https: //sns.us-east-1.amazonaws.com/SimpleNotificationService-01d088a6f77103d0fe307c0069e40ed6.pem",
+                "UnsubscribeUrl": "https://sns.us-east-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-1:289485838881:hdmap-services-events-production:e53d9a4c-580c-4ddf-8a55-96a1f1894edb",
+                "MessageAttributes": {
+                    "content_type": {
+                        "Type": "String",
+                        "Value": "application/json"
+                    }
+                }
+            }
+        }
+    ]
+}

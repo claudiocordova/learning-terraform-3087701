@@ -1,0 +1,329 @@
+#org: claudiocordova
+#app: apps
+# Docs:
+#  - Serverless for AWS full specs: https://www.serverless.com/framework/docs/providers/aws/guide/serverless.yml/
+#  - Python reqs: https://github.com/UnitedIncome/serverless-python-requirements
+#  - Sns: https://www.serverless.com/framework/docs/providers/aws/events/sns
+#  - IAM: https://www.serverless.com/framework/docs/providers/aws/guide/iam
+#  - CORS: https://www.serverless.com/framework/docs/providers/aws/events/http-api#
+#          https://www.serverless.com/blog/cors-api-gateway-survival-guide/
+
+service: kronos
+useDotenv: true
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  endpointType: PRIVATE
+  vpcEndpointIds:
+    - vpce-035a176cb9752dbb8
+  vpc: ${self:custom.vpcs.usVpc}
+  runtime: python3.9
+  region: us-east-1
+  #stage: ${opt:stage, 'dev'}
+  stage: staging # Default stage to be used. If omitted the default is `dev`. Override with `sls deploy --stage production`.
+  memorySize: 256 # Default is 1024.
+  timeout: 120 # Default is 6 seconds. Note: API Gateway current maximum is 30 seconds.
+  logRetentionInDays: 365 # Set the default RetentionInDays for a CloudWatch LogGroup. Default is never expire.
+  environment: # Env vars. Use it also for secrets and config to override those in `settings_default.toml`.
+    # Note: they need to use the prefix `MUNDI_` to be read as env vars by Dynaconf.
+    # Note: it's better to store all secrets here rather than nested under `functions:`
+    #  so they are available to all Lambdas and to the `/settings` introspection endpoint.
+    # For using tokens in Secrets Manager: https://www.serverless.com/framework/docs/providers/aws/guide/variables#reference-variables-using-aws-secrets-manager
+    HELLO: hi
+    KRONOS_S3_BUCKET: kronos-metric-data-${sls:stage}
+      #Fn::ImportValue: KronosS3BucketName
+    # MUNDI_DYNAMODB_TABLE_NAME: hdmap-mundi-${sls:stage}
+    # MUNDI_S3_BUCKET_SCANNER_SQS_QUEUE_NAME: hdmap-mundi-s3-dataset-scanner-task-queue-${sls:stage}
+    # MUNDI_MAP_DATA_CLIENT_CREDENTIALS_ID: ${env:MAP_DATA_CLIENT_CREDENTIALS_ID, ssm:/hdmap_mundi/${opt:stage, self:provider.stage}/map_data_client_credentials_id, ssm:/hdmap_mundi/production/map_data_client_credentials_id, 'XXX'}
+    # MUNDI_MAP_DATA_CLIENT_CREDENTIALS_SECRET: ${env:MAP_DATA_CLIENT_CREDENTIALS_SECRET, ssm:/hdmap_mundi/${opt:stage, self:provider.stage}/map_data_client_credentials_secret, ssm:/hdmap_mundi/production/map_data_client_credentials_secret, 'XXX'}
+    # MUNDI_MUNDI_EVENTS_SNS_TOPIC_ARN: arn:aws:sns:us-east-1:289485838881:hdmap-mundi-events-${sls:stage}
+  # apiGateway:
+  #   resourcePolicy:
+  #     - Effect: Allow
+  #       Principal: '*'
+  #       Action: execute-api:Invoke
+  #       Resource:
+  #         - arn:aws:execute-api:us-east-1:289485838881:*/*/*
+  #       Condition:
+  #         StringEquals:
+  #           aws:sourceVpc:
+  #             - 'vpc-0c732540ce4a3a055'
+
+  tags: # CloudFormation tags to apply to APIs and functions.
+    # HDMap web specific tags.
+    hdmap-web-product: ${self:service}
+    hdmap-web-stage: ${sls:stage}
+    managed-by: Serverless at https://gitlab.ci.motional.com/map/map-sdk
+    # Motional SRE requested tags: https://confluence.ci.motional.com/confluence/display/SRE/Tagging+Policy
+    Team: ${self:custom.tags.team}
+    Project: ${self:service}
+    Environment: ${sls:stage}
+  stackTags: ${self:provider.tags} # CloudFormation tags to apply to the stack.
+  deploymentBucket:
+    blockPublicAccess: true # Prevent public access via ACLs or bucket policies. Default is false.
+    tags: ${self:provider.tags} # Tags to add to each of the deployment resources.
+  iam: # Docs: https://www.serverless.com/framework/docs/providers/aws/guide/iam.
+    role:
+      tags: ${self:provider.tags} # CloudFormation tags.
+      # TODO for stronger security switch to iam-roles-per-function as in ODD Manager.
+      #  See: https://www.serverless.com/plugins/serverless-iam-roles-per-function
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:*
+          Resource:
+            - arn:aws:s3:::kronos-metric-data-${sls:stage}
+            #- arn:aws:s3:::motional-basemapdb-prod # It also requires a special resource policy on the bucket itself (created with Terraform in map-devops repo).
+            #- arn:aws:s3:::motional-basemapdb-prod/*
+            #- arn:aws:s3:::motional-map-creator-tiles-prod # To scan for artifacts.
+            #- arn:aws:s3:::motional-map-creator-tiles-prod/*
+
+
+        - Effect: Allow
+          Action:
+            - lambda:GetLayerVersion
+          Resource: "*"
+
+        - Effect: Allow
+          Action:
+            - dynamodb:*
+          Resource:
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-event-sources-${sls:stage}
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-event-sources-${sls:stage}/index/*
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-events-${sls:stage}
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-events-${sls:stage}/index/*
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-jira-tickets-${sls:stage}
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-jita-tickets-${sls:stage}/index/*
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-regions-${sls:stage}
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-regions-${sls:stage}/index/*
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-services-${sls:stage}
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-services-${sls:stage}/index/*
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-tracking-activities-${sls:stage}
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-tracking-activities-${sls:stage}/index/*
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-tracking-activity-aliases-${sls:stage}
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-tracking-activity-aliases-${sls:stage}/index/*  
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-variables-${sls:stage}
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/kronos-variables-${sls:stage}/index/*     
+
+        - Effect: Deny # An explicit deny in any policy overrides any allows.
+          Action:
+            - dynamodb:DeleteTable*
+            - dynamodb:DeleteBackup*
+          Resource: 
+            - arn:aws:dynamodb:${aws:region}:289485838881:table/*
+
+        #- Effect: Allow
+        #  Action:
+        #    - sqs:SendMessage
+        #    - sqs:GetQueueUrl
+        # Resource:
+        #    - Fn::GetAtt: [ S3DatasetScannerTaskQueue, Arn ]
+            
+        #- Effect: Allow
+        #  Action:
+        #    - ssm:GetParameter
+        #  Resource:
+        #    - arn:aws:ssm:us-east-1:289485838881:parameter/MapPlatform/OktaToken
+
+        #- Effect: Allow
+        #  Action:
+        #    - sns:Publish
+        #  Resource:
+        #    - Ref: MundiEventsSnsTopic
+
+
+
+functions:
+
+  kronos-event-sns-subscriber:
+    handler: kronos.functions.event_sns_subscriber.lambda_handler
+    layers: ${self:custom.sharedLayers}
+    name: kronos-event-sns-subscriber-${sls:stage}
+    events:
+    # Docs: https://www.serverless.com/framework/docs/providers/aws/events/sns
+    # Serverless assumes it already exists and assigns permissions and creates the subscription for this Lambda.
+      - sns: 
+          arn: arn:aws:sns:us-east-1:289485838881:hdmap-services-events-production 
+    #vpc: ${self:custom.serverlessBase.vpcs.usVpc}
+    vpc: ${self:custom.vpcs.usVpc}
+
+
+
+  kronos-services-to-s3-processor:
+    handler: kronos.functions.ddb_to_s3_processor.lambda_handler
+    layers: ${self:custom.sharedLayers}
+    name: kronos-services-to-s3-processor-${sls:stage}
+    memorySize: 128
+    timeout: 28 # Note: API Gateway current maximum is 29 seconds.
+    maximumRetryAttempts: 1
+    events:
+      #- stream: arn:aws:dynamodb:us-east-1:289485838881:table/kronos-services-staging/stream/2023-07-16T02:27:43.830
+      - stream:
+          type: dynamodb
+          batchSize: 1
+          startingPosition: LATEST
+          arn:
+            Fn::ImportValue: DynamoDBTableServicesStreamArn
+
+  kronos-events-to-s3-processor:
+    handler: kronos.functions.ddb_to_s3_processor.lambda_handler
+    layers: ${self:custom.sharedLayers}
+    name: kronos-events-to-s3-processor-${sls:stage}
+    memorySize: 128
+    timeout: 28 # Note: API Gateway current maximum is 29 seconds.
+    maximumRetryAttempts: 1
+    events:
+      #- stream: arn:aws:dynamodb:us-east-1:289485838881:table/kronos-services-staging/stream/2023-07-16T02:27:43.830
+      - stream:
+          type: dynamodb
+          batchSize: 1
+          startingPosition: LATEST
+          arn:
+            Fn::ImportValue: DynamoDBTableEventsStreamArn
+
+
+     #vpc: ${self:custom.serverlessBase.vpcs.usVpc}         
+
+
+
+  # upload-events-subscriber-main:
+  #   handler: mundi.views.upload_events_subscriber_view.main_lambda_handler
+  #   layers: ${self:custom.sharedLayers}
+  #   events:
+  #     - sns: # Docs: https://www.serverless.com/framework/docs/providers/aws/events/sns
+  #         arn: arn:aws:sns:us-east-1:289485838881:hdmap-s3-basemapdb-events-prod # Serverless assumes it already exists and assigns permissions and creates the subscription for this Lambda.
+
+  # services-events-subscriber-main:
+  #   handler: mundi.views.hdmap_services_events_subscriber_view.main_lambda_handler
+  #   layers: ${self:custom.sharedLayers}
+  #   events:
+  #     - sns: # Docs: https://www.serverless.com/framework/docs/providers/aws/events/sns
+  #         arn: arn:aws:sns:us-east-1:289485838881:hdmap-services-events-production # Serverless assumes it already exists and assigns permissions and creates the subscription for this Lambda.
+  #   vpc: ${self:custom.serverlessBase.vpcs.usVpc}
+
+  # s3-dataset-scanner-task-producer-main:
+  #   handler: mundi.views.s3_bucket_scanner_view.s3_dataset_scanner_tasks_producer_lambda_handler
+  #   layers: ${self:custom.sharedLayers}
+  #   events:
+  #     - schedule:
+  #         # Docs: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html#CronExpressions
+  #         rate: cron(0 0 * * ? *)  # Daily trigger at 00:00UTC.
+  #         enabled: true
+  #         description: "HDMap Mundi: S3 Dataset Scanner daily scheduler"
+
+  # s3-dataset-scanner-task-consumer-main:
+  #   handler: mundi.views.s3_bucket_scanner_view.s3_dataset_scanner_tasks_consumer_lambda_handler
+  #   layers: ${self:custom.sharedLayers}
+  #   events:
+  #     - sqs: # Serverless assumes it already exists. Created in `resources`.
+  #         arn:
+  #           Fn::GetAtt: [ S3DatasetScannerTaskQueue, Arn ]
+  #         batchSize: 1
+
+  # map-creator-deployment-scanner-main:
+  #   handler: mundi.views.map_creator_deployment_scanner_view.main_lambda_handler
+  #   layers: ${self:custom.sharedLayers}
+  #   events:
+  #     - schedule:
+  #         # Docs: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html#CronExpressions
+  #         rate: cron(30 * * * ? *)  # Hourly trigger at 30 minutes.
+  #         enabled: true
+  #         description: "HDMap Mundi: Map Creator deployment scanner hourly scheduler"
+  #   vpc: ${self:custom.serverlessBase.vpcs.usVpc}
+
+package:
+  # Individually should only be used for a project with multiple modules each with their own specific dependencies.
+  #  Docs: https://www.serverless.com/plugins/serverless-python-requirements#per-function-requirements
+  individually: false
+  #exclude:
+  #  - node_modules/**
+  #  - backup/**
+  patterns:
+    - "!*/**"
+    - 'kronos/**' 
+  # patterns: # Specify the directories and files which should be included in the deployment package. Order matters.
+  #   - "!**"
+  #   - mundi/**
+  #   - "!mundi/conf/**"
+  #   - mundi/conf/*.py
+  #   - mundi/conf/settings_default.toml
+  #   - "!**/__pycache__/**"
+  #   - pyproject.toml
+  #   - serverless.yml
+
+plugins:
+  - serverless-python-requirements
+  # - serverless-iam-roles-per-function
+  # - serverless-openapi-documenter
+  # - serverless-plugin-utils
+  # - serverless-plugin-datadog
+  # - serverless-better-credentials not needed because of ssocred #npm install --dev serverless-better-credentials  
+
+custom:
+  #serverlessBase: ${file(../../../serverless-base.yml)}
+  #pythonRequirements: ${self:custom.serverlessBase.pythonRequirements}
+  pythonRequirements:
+    slim: true # Strip the .so files, remove __pycache__, etc. See: https://www.serverless.com/plugins/serverless-python-requirements.
+    # When deploying from local dev machine, it's important to disable useStaticCache, useDownloadCache and pip cache
+    #  in order to ensure that local libs (like `events`) are always rebuilt.
+    useStaticCache: false
+    useDownloadCache: false
+    pipCmdExtraArgs: ["--no-cache-dir"]
+
+  sharedLayers: 
+     - arn:aws:lambda:us-east-1:289485838881:layer:aws-lambda-powertools-python-layer:2
+     #- arn:aws:lambda:us-east-1:336392948345:layer:StagingAWSSDKPandas-Python39:11
+  vpcs:
+    usVpc: # The VPC should exist already, Serverless does not create it. Note that the VPC name is not referenced here, only subnet and security group.
+      # The existing vpc is: vpc-0c732540ce4a3a055 (us-vpc). It must be able to reach `editor.maps.motional.com`.
+      securityGroupIds:
+        # TODO create a dedicated Security Group instead of using the default.
+        - sg-02f7de109e159fed5 # default.
+      subnetIds:
+        - subnet-0d3522d2d7088bd6a # us-east-1a-private.
+        - subnet-08dec36e1f94adba2 # us-east-1b-private.
+  tags:
+    team: kronos       
+  # cors:
+  #   origins:
+  #     - http://localhost:8080
+  #     - https://dev.d14cv1d4fwg75d.amplifyapp.com
+  #     - https://demo.d14cv1d4fwg75d.amplifyapp.com
+  #     - https://prod.d14cv1d4fwg75d.amplifyapp.com
+  #     - https://devpaolo.d14cv1d4fwg75d.amplifyapp.com
+  #     - https://devcy.d14cv1d4fwg75d.amplifyapp.com
+  #     - https://devjas.d14cv1d4fwg75d.amplifyapp.com
+
+# # Raw CloudFormation template syntax, in YAML.
+# # Docs: https://www.serverless.com/framework/docs/providers/aws/guide/resources.
+# resources:
+#   # Set the description in the CloudFormation stack.
+#   Description: Managed by Serverless at https://gitlab.ci.motional.com/map/map-sdk
+#   Resources:
+#     S3DatasetScannerTaskQueue:
+#       Type: AWS::SQS::Queue # Docs: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-sqs-queue.html
+#       Properties:
+#         QueueName: hdmap-mundi-s3-dataset-scanner-task-queue-${sls:stage}
+#         # Queue visibility timeout must be >= lambda function timeout.
+#         # Default queue visibility is 30s and function timeout is 60s.
+#         # Some discussion about this can be found here: https://github.com/aws/serverless-application-model/issues/1424
+#         VisibilityTimeout: 120
+#     MundiEventsSnsTopic:
+#       Type: AWS::SNS::Topic
+#       Properties:
+#         TopicName: hdmap-mundi-events-${sls:stage}
+#         Tags:
+#           - Key: hdmap-web-product
+#             Value: ${self:service}
+#           - Key: hdmap-web-stage
+#             Value: ${sls:stage}
+#           - Key: managed-by
+#             Value: Serverless at https://gitlab.ci.motional.com/map/map-sdk
+#           - Key: Team
+#             Value: ${self:custom.serverlessBase.tags.team}
+#           - Key: Project
+#             Value: ${self:service}
+#           - Key: Environment
+#             Value: ${sls:stage}

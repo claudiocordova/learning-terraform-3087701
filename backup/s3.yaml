@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Metadata:
+    Generator: "Kronos"
+Description: "Kronos"
+Parameters:
+  EnvironmentParameter:
+    Type: String
+    Default: staging
+
+Resources:
+
+ 
+
+
+
+    KronosS3Bucket:
+      Type: 'AWS::S3::Bucket'
+      #DeletionPolicy: Retain
+      Properties:
+        BucketName: !Sub "kronos-metric-data-${EnvironmentParameter}"
+
+    # BucketPolicy:
+    #   Type: 'AWS::S3::BucketPolicy'
+    #   Properties:
+    #     Bucket: !Ref KronosS3Bucket 
+    #     PolicyDocument:
+    #       Version: 2012-10-17
+    #       Statement:
+    #         Fn::Sub: | 
+    #           {
+    #               "Version": "2008-10-17",
+    #               "Statement": [
+    #                   {
+    #                       "Effect": "Deny",
+    #                       "Principal": "*",
+    #                       "Action": "s3:*",
+    #                       "Resource": [
+    #                           "arn:aws:s3:${AWS::Region}:${AWS::AccountId}:kronos-metric-data-staging/*",
+    #                           "arn:aws:s3:${AWS::Region}:${AWS::AccountId}:kronos-metric-data-staging"
+    #                       ],
+    #                       "Condition": {
+    #                           "Bool": {
+    #                               "aws:SecureTransport": "false"
+    #                           }
+    #                       }
+    #                   }
+    #               ]
+    #           }
+
+
+# {
+#     "Version": "2012-10-17",
+#     "Statement": [
+#         {
+#             "Sid": "Allow-data-platform-stg-access",
+#             "Effect": "Allow",
+#             "Principal": {
+#                 "AWS": "AROAUGZVTLIQSB4CJOSJ6"
+#             },
+#             "Action": [
+#                 "s3:GetObject",
+#                 "s3:ListBucket",
+#                 "s3:PutObject",
+#                 "s3:DeleteObject"
+#             ],
+#             "Resource": [
+#                 "arn:aws:s3:::kronos-metric-data-staging",
+#                 "arn:aws:s3:::kronos-metric-data-staging/*"
+#             ]
+#         }
+#     ]
+# }
+
+
+
+
+  # ServerlessDeploymentBucketPolicy:
+  #   Type: 'AWS::S3::BucketPolicy'
+  #   Properties:
+  #     Bucket: !Ref ServerlessDeploymentBucket
+  #     PolicyDocument:
+  #       Statement:
+  #         - Action: 's3:*'
+  #           Effect: Deny
+  #           Principal: '*'
+  #           Resource:
+  #             - !Join 
+  #               - ''
+  #               - - 'arn:'
+  #                 - !Ref 'AWS::Partition'
+  #                 - ':s3:::'
+  #                 - !Ref ServerlessDeploymentBucket
+  #                 - /*
+  #             - !Join 
+  #               - ''
+  #               - - 'arn:'
+  #                 - !Ref 'AWS::Partition'
+  #                 - ':s3:::'
+  #                 - !Ref ServerlessDeploymentBucket
+  #           Condition:
+  #             Bool:
+  #               'aws:SecureTransport': false
+
+
+
+
+
+
+Outputs:
+  KronosS3BucketName :
+    Value: !Ref KronosS3Bucket
+    Export:
+      Name: KronosS3BucketName  

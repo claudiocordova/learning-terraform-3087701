@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "kronos"
+version = "0.1.0"
+description = ""
+authors = ["Claudio Cordova <claudio_cordova@yahoo.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+aws-lambda-powertools = "^2.22.0"
+requests = "^2.31.0"
+urllib3 = "<2"
+panda = "^0.3.1"
+# For log-adapter there is no need to add `extras = ["powertools"]` because Lambda Powertools
+#  Python is deployed as Lambda layer.
+log-adapter = {path = "../../python/log-adapter", develop = false}
+hdmap-events = {path = "../../python/events", develop = false}
+map-data-client = {path = "../../python/map-data-client", develop = false}
+dynaconf = "^3.2.0"
+types-awscrt = "^0.16.26"
+mypy-boto3-dynamodb = "^1.28.11"
+svix-ksuid = "^0.6.2"
+mypy-boto3-s3 = "^1.28.8"
+mypy-boto3-sns = "^1.28.0"
+mypy-boto3-sqs = "^1.28.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

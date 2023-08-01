@@ -1,0 +1,21 @@
+{
+    "event_source": "POSE_GRAPH_VALIDATOR_ARGO",
+    "payload": {
+        "service_id": "POSE_GRAPH_VALIDATOR",
+        "is_test_data": false,
+        "dataset_session": "2023-07-27_19-54-09-GMT",
+        "drivelog": null,
+        "has_colored_point_cloud": null,
+        "service_progress_url": "https://argo.maps.motional.com/workflows/argo/pose-graph-validator-msqbr%5C",
+        "dataset_region": "us-ca-los-angeles-santa-monica"
+    },
+    "hdmap_slackbot": {
+        "do_skip_notification": null,
+        "extra_text": ""
+    },
+    "slack_message": {
+        "channel": null,
+        "text": null
+    },
+    "event_id": "SERVICE_START"
+}

@@ -1,0 +1,1 @@
+aws cloudformation deploy --stack-name kronos-dynamodb-staging --template-file ./dynamodb.yaml --capabilities CAPABILITY_NAMED_IAM  --parameter-overrides ParameterKey=EnvironmentParameter,ParameterValue=staging
